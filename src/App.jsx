@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import DecompositionPage from './DecompositionPage.jsx'
 import LandingPage from './LandingPage.jsx'
+import ReferenceFramesPage from './ReferenceFramesPage.jsx'
 import { evalExpr, nearlyEqual } from './mathEval.js'
 
 // ── helpers ────────────────────────────────────────────────────────────────────
@@ -429,9 +430,10 @@ function TrainerPage() {
 // ── Tab shell ──────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'home',     label: 'Home' },
+  { id: 'home',      label: 'Home' },
   { id: 'decompose', label: '2D Frame Decomposition' },
-  { id: 'trainer',  label: '3D Matrix Trainer' },
+  { id: 'trainer',   label: '3D Matrix Trainer' },
+  { id: 'refframes', label: 'Reference Frames' },
 ]
 
 export default function App() {
@@ -461,9 +463,10 @@ export default function App() {
       </div>
 
       {/* Page content */}
-      {tab === 'home'     && <LandingPage onNavigate={setTab} />}
+      {tab === 'home'      && <LandingPage onNavigate={setTab} />}
       {tab === 'decompose' && <DecompositionPage />}
-      {tab === 'trainer'  && <TrainerPage />}
+      {tab === 'trainer'   && <TrainerPage />}
+      {tab === 'refframes' && <ReferenceFramesPage />}
     </div>
   )
 }
