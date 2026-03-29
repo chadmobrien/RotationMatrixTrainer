@@ -60,7 +60,7 @@ function genApplyQuestion() {
   const result = applyMat(M, v)
   return {
     type: 'apply',
-    prompt: `Apply R${axis}(${angle}°) to v = [${v.join(', ')}].\nWhat is the result vector? (round to 4 decimal places)`,
+    prompt: `Apply R_${axis}(${angle}°) to v = [${v.join(', ')}].\nWhat is the result vector? (round to 4 decimal places)`,
     answer: result.map(x => parseFloat(fmt(x))),
     meta: { axis, angle, v, M }
   }
@@ -103,7 +103,7 @@ function genEntryQuestion() {
   const val = parseFloat(fmt(M[row][col]))
   return {
     type: 'entry',
-    prompt: `For R${axis}(${angle}°), what is the value of M[${row+1}][${col+1}] (row ${row+1}, col ${col+1})?`,
+    prompt: `For R_${axis}(${angle}°), what is the value of M[${row+1}][${col+1}] (row ${row+1}, col ${col+1})?`,
     answer: val,
     meta: { axis, angle, row, col, M }
   }
@@ -117,7 +117,7 @@ function genCompositionQuestion() {
   const result = applyMat(M, v)
   return {
     type: 'composition',
-    prompt: `Apply R${a1}(${ang1}°) first, then R${a2}(${ang2}°) to v = [${v.join(', ')}].\nWhat is the final vector?`,
+    prompt: `Apply R_${a1}(${ang1}°) first, then R_${a2}(${ang2}°) to v = [${v.join(', ')}].\nWhat is the final vector?`,
     answer: result.map(x => parseFloat(fmt(x))),
     meta: { a1, ang1, a2, ang2, v }
   }
@@ -220,20 +220,20 @@ function TrainerPage() {
       expl = `Correct answer: [${q.answer.map(fmt).join(', ')}]`
       if (q.type === 'apply') {
         const { axis, angle, v } = q.meta
-        expl += `\n\nR${axis}(${angle}°) × [${v.join(', ')}]`
+        expl += `\n\nR_${axis}(${angle}°) × [${v.join(', ')}]`
       } else {
         const { a1, ang1, a2, ang2, v } = q.meta
-        expl += `\n\nFirst apply R${a1}(${ang1}°), then R${a2}(${ang2}°) to [${v.join(', ')}]`
+        expl += `\n\nFirst apply R_${a1}(${ang1}°), then R_${a2}(${ang2}°) to [${v.join(', ')}]`
       }
     } else if (q.type === 'entry') {
       const parsed = evalExpr(numInput)
       correct = nearlyEqual(parsed, q.answer)
-      expl = `Correct answer: ${fmt(q.answer)}\n\nMatrix R${q.meta.axis}(${q.meta.angle}°):`
+      expl = `Correct answer: ${fmt(q.answer)}\n\nMatrix R_${q.meta.axis}(${q.meta.angle}°):`
     } else if (q.type === 'identify') {
       correct = choiceSelected &&
         choiceSelected.axis === q.correct.axis &&
         choiceSelected.angle === q.correct.angle
-      expl = `Correct: R${q.correct.axis}(${q.correct.angle}°)`
+      expl = `Correct: R_${q.correct.axis}(${q.correct.angle}°)`
     }
 
     setResult(correct ? 'correct' : 'wrong')
@@ -251,7 +251,7 @@ function TrainerPage() {
         <h1 style={{ fontSize: 26, fontWeight: 700, color: '#f1f5f9', marginBottom: 4 }}>
           Rotation Matrix Trainer
         </h1>
-        <p style={{ color: '#64748b', fontSize: 14 }}>3D rotation matrices — Rx, Ry, Rz</p>
+        <p style={{ color: '#64748b', fontSize: 14 }}>3D rotation matrices — R<sub>x</sub>, R<sub>y</sub>, R<sub>z</sub></p>
       </div>
 
       {/* Score */}
@@ -339,7 +339,7 @@ function TrainerPage() {
                   transition: 'all 0.15s'
                 }}
               >
-                R{c.axis}({c.angle}°)
+                R<sub>{c.axis}</sub>({c.angle}°)
               </button>
             ))}
           </div>
@@ -407,20 +407,20 @@ function TrainerPage() {
         </summary>
         <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 16 }}>
           {[
-            { label: 'Rx(θ)', M: rotX(45) },
-            { label: 'Ry(θ)', M: rotY(45) },
-            { label: 'Rz(θ)', M: rotZ(45) },
-          ].map(({ label, M }) => (
-            <div key={label}>
+            { label: <>R<sub>x</sub>(θ)</>, key: 'Rx', M: rotX(45) },
+            { label: <>R<sub>y</sub>(θ)</>, key: 'Ry', M: rotY(45) },
+            { label: <>R<sub>z</sub>(θ)</>, key: 'Rz', M: rotZ(45) },
+          ].map(({ label, key, M }) => (
+            <div key={key}>
               <p style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>{label} (shown at θ=45°)</p>
               <MatrixDisplay M={M} />
             </div>
           ))}
         </div>
         <div style={{ marginTop: 12, fontFamily: 'monospace', fontSize: 12, color: '#64748b', lineHeight: 1.8 }}>
-          <div>Rx(θ) = [[1,0,0], [0,cos,-sin], [0,sin,cos]]</div>
-          <div>Ry(θ) = [[cos,0,sin], [0,1,0], [-sin,0,cos]]</div>
-          <div>Rz(θ) = [[cos,-sin,0], [sin,cos,0], [0,0,1]]</div>
+          <div>R<sub>x</sub>(θ) = [[1,0,0], [0,cos,-sin], [0,sin,cos]]</div>
+          <div>R<sub>y</sub>(θ) = [[cos,0,sin], [0,1,0], [-sin,0,cos]]</div>
+          <div>R<sub>z</sub>(θ) = [[cos,-sin,0], [sin,cos,0], [0,0,1]]</div>
         </div>
       </details>
     </div>

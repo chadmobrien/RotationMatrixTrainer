@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 // ── Shared projection ──────────────────────────────────────────────────────────
 // Orthographic view: eye at azimuth −30° from X axis, elevation 25°
 //   Screen right  R = ( 0.500,  0.866,  0    )
@@ -295,6 +297,255 @@ function NedGlobe() {
   )
 }
 
+// ── Matrix display helper ──────────────────────────────────────────────────────
+
+function Matrix3({ rows, color = '#e2e8f0', fs = 13 }) {
+  const fmt = v => {
+    if (typeof v === 'string') return v
+    if (Math.abs(v) < 0.00005) return '0'
+    return v.toFixed(4)
+  }
+  return (
+    <div style={{
+      display: 'inline-grid', gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: '5px 10px', padding: '10px 14px',
+      borderLeft: '2px solid #475569', borderRight: '2px solid #475569',
+      fontFamily: 'monospace', fontSize: fs, color,
+    }}>
+      {rows.flat().map((v, i) => (
+        <span key={i} style={{
+          textAlign: 'right', minWidth: 66,
+          color: typeof v === 'string' ? '#94a3b8' : color,
+        }}>{fmt(v)}</span>
+      ))}
+    </div>
+  )
+}
+
+// ── ECEF → NED Transform section ───────────────────────────────────────────────
+
+function EcefToNedSection() {
+  const [lat, setLat] = useState(30)
+  const [lon, setLon] = useState(20)
+  const [vx, setVx] = useState(1)
+  const [vy, setVy] = useState(0)
+  const [vz, setVz] = useState(0)
+
+  const phi = lat * DEG
+  const lam = lon * DEG
+
+  // Three elemental rotation matrices
+  const Rz_nl = [
+    [ Math.cos(lam),  Math.sin(lam), 0],
+    [-Math.sin(lam),  Math.cos(lam), 0],
+    [ 0,              0,             1],
+  ]
+  const Ry_np = [
+    [ Math.cos(phi), 0, Math.sin(phi)],
+    [ 0,             1, 0            ],
+    [-Math.sin(phi), 0, Math.cos(phi)],
+  ]
+  const Ry_n90 = [[ 0, 0, 1], [0, 1, 0], [-1, 0, 0]]
+
+  // T_ECEF^NED = R_y(-90°) · R_y(-φ) · R_z(λ)
+  const T_ned = [
+    [-Math.sin(phi)*Math.cos(lam), -Math.sin(phi)*Math.sin(lam),  Math.cos(phi)],
+    [-Math.sin(lam),                Math.cos(lam),                 0            ],
+    [-Math.cos(phi)*Math.cos(lam), -Math.cos(phi)*Math.sin(lam), -Math.sin(phi)],
+  ]
+
+  const vECEF = [Number(vx), Number(vy), Number(vz)]
+  const vNED  = T_ned.map(row => row.reduce((s, c, i) => s + c * vECEF[i], 0))
+
+  const card = {
+    background: '#1e293b', border: '1px solid #334155', borderRadius: 10,
+    padding: '18px 20px', flex: 1, minWidth: 220,
+  }
+  const inp = {
+    background: '#0f172a', border: '1px solid #334155', borderRadius: 6,
+    color: '#e2e8f0', fontFamily: 'monospace', fontSize: 13,
+    padding: '6px 10px', width: 70, textAlign: 'center',
+  }
+  const resultBox = (col) => ({
+    background: '#0f172a', border: '1px solid #1e293b', borderRadius: 6,
+    color: col, fontFamily: 'monospace', fontSize: 13,
+    padding: '6px 10px', width: 72, textAlign: 'center',
+  })
+
+  return (
+    <div>
+
+      {/* Divider */}
+      <div style={{ margin: '40px 0', padding: '20px 24px', background: '#0f172a', borderRadius: 12, border: '1px solid #1e293b' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <div style={{ flex: 1, height: 1, background: '#1e293b' }} />
+          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#3b82f6' }}>
+            ROTATION MATRIX DERIVATION
+          </span>
+          <div style={{ flex: 1, height: 1, background: '#1e293b' }} />
+        </div>
+        <p style={{ fontSize: 14, color: '#94a3b8', lineHeight: 1.75, margin: 0 }}>
+          The ECEF-to-NED transformation is a product of three elemental rotations — the same
+          R<sub>x</sub>, R<sub>y</sub>, R<sub>z</sub> building blocks from the 3D Matrix Trainer. Each step uses only λ or φ,
+          the two angles that locate the NED origin on the globe.
+        </p>
+      </div>
+
+      {/* Section header */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap', marginBottom: 10 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: '#f1f5f9', margin: 0 }}>ECEF → NED</h2>
+        <span style={{ fontSize: 15, color: '#64748b' }}>Transformation Matrix Derivation</span>
+      </div>
+      <p style={{ fontSize: 14, color: '#94a3b8', lineHeight: 1.7, marginBottom: 24 }}>
+        Starting in ECEF, three sequential rotations re-orient the axes until they align with
+        North, East, and Down at the chosen surface point. The combined transformation is
+        <span style={{ color: '#cbd5e1' }}> T<sub>ECEF</sub><sup>NED</sup> = R<sub>y</sub>(−90°) · R<sub>y</sub>(−φ) · R<sub>z</sub>(λ)</span>.
+      </p>
+
+      {/* Step cards */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
+
+        <div style={card}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#3b82f6', marginBottom: 8 }}>Step 1</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#e2e8f0', marginBottom: 6 }}>Longitude — R<sub>z</sub>(λ)</div>
+          <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6, marginBottom: 14 }}>
+            Positive right-hand rotation about Z (North Pole) by λ. Swings the X-axis to face the local meridian.
+          </p>
+          <Matrix3 fs={12} rows={[
+            ['cosλ',  'sinλ', '0'],
+            ['−sinλ', 'cosλ', '0'],
+            ['0',     '0',    '1'],
+          ]} />
+        </div>
+
+        <div style={card}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#8b5cf6', marginBottom: 8 }}>Step 2</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#e2e8f0', marginBottom: 6 }}>Latitude — R<sub>y</sub>(−φ)</div>
+          <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6, marginBottom: 14 }}>
+            Rotate about the intermediate Y-axis by −φ. Tilts X upward until it points radially outward from the surface point.
+          </p>
+          <Matrix3 fs={12} rows={[
+            ['cosφ',  '0', 'sinφ'],
+            ['0',     '1', '0'  ],
+            ['−sinφ', '0', 'cosφ'],
+          ]} />
+        </div>
+
+        <div style={card}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#0ea5e9', marginBottom: 8 }}>Step 3</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#e2e8f0', marginBottom: 6 }}>Align — R<sub>y</sub>(−90°)</div>
+          <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6, marginBottom: 14 }}>
+            Rotate −90° about Y. The radially-outward X swings into Down; the Z-axis (pointing North) becomes the new X.
+          </p>
+          <Matrix3 fs={12} rows={[[ 0, 0, 1], [0, 1, 0], [-1, 0, 0]]} />
+        </div>
+
+      </div>
+
+      {/* Combined formula */}
+      <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 10, padding: '20px 24px', marginBottom: 28 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#475569', marginBottom: 14 }}>
+          Combined Result
+        </p>
+        <div style={{ fontSize: 13, fontFamily: 'monospace', color: '#94a3b8', marginBottom: 16, lineHeight: 2 }}>
+          <span style={{ color: '#e2e8f0', fontWeight: 700 }}>T<sub>ECEF</sub><sup>NED</sup></span>
+          {' = R'}<sub>y</sub>{'(−90°) · R'}<sub>y</sub>{'(−φ) · R'}<sub>z</sub>{'(λ) = '}
+        </div>
+        <Matrix3 color="#cbd5e1" fs={13} rows={[
+          ['−sinφ cosλ', '−sinφ sinλ', ' cosφ'],
+          ['−sinλ',       ' cosλ',      '  0  '],
+          ['−cosφ cosλ', '−cosφ sinλ', '−sinφ'],
+        ]} />
+        <p style={{ fontSize: 12, color: '#475569', marginTop: 14, marginBottom: 0, lineHeight: 1.7 }}>
+          Each row is a NED axis expressed in ECEF:&nbsp;
+          <span style={{ color: '#22c55e' }}>North</span> (row 1) ·&nbsp;
+          <span style={{ color: '#f59e0b' }}>East</span> (row 2) ·&nbsp;
+          <span style={{ color: '#ef4444' }}>Down</span> (row 3).&nbsp;
+          Apply as <span style={{ fontFamily: 'monospace', color: '#94a3b8' }}>v_NED = T<sub>ECEF</sub><sup>NED</sup> · v_ECEF</span>.
+        </p>
+      </div>
+
+      {/* Interactive calculator */}
+      <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, padding: '22px 24px' }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#475569', marginBottom: 20 }}>
+          Interactive Calculator
+        </p>
+
+        {/* Inputs */}
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 20, alignItems: 'flex-end' }}>
+          {[['Latitude φ (°)', lat, setLat], ['Longitude λ (°)', lon, setLon]].map(([label, val, setter]) => (
+            <div key={label}>
+              <div style={{ fontSize: 11, color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>{label}</div>
+              <input type="number" value={val} onChange={e => setter(Number(e.target.value))} style={inp} />
+            </div>
+          ))}
+        </div>
+
+        {/* Elemental matrices */}
+        <p style={{ fontSize: 11, color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>Elemental Matrices</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start', marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 11, color: '#3b82f6', marginBottom: 6 }}>R<sub>z</sub>(λ)</div>
+            <Matrix3 rows={Rz_nl} fs={12} color="#93c5fd" />
+          </div>
+          <div style={{ fontSize: 18, color: '#334155', alignSelf: 'center', paddingTop: 8 }}>·</div>
+          <div>
+            <div style={{ fontSize: 11, color: '#8b5cf6', marginBottom: 6 }}>R<sub>y</sub>(−φ)</div>
+            <Matrix3 rows={Ry_np} fs={12} color="#c4b5fd" />
+          </div>
+          <div style={{ fontSize: 18, color: '#334155', alignSelf: 'center', paddingTop: 8 }}>·</div>
+          <div>
+            <div style={{ fontSize: 11, color: '#0ea5e9', marginBottom: 6 }}>R<sub>y</sub>(−90°)</div>
+            <Matrix3 rows={Ry_n90} fs={12} color="#7dd3fc" />
+          </div>
+        </div>
+
+        {/* Combined numerical matrix */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>
+            T<sub>ECEF</sub><sup>NED</sup> ({lat}°N, {lon}°E)
+          </div>
+          <Matrix3 rows={T_ned} color="#e2e8f0" fs={13} />
+        </div>
+
+        {/* Vector transform */}
+        <div style={{ borderTop: '1px solid #334155', paddingTop: 20 }}>
+          <p style={{ fontSize: 11, color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 14 }}>
+            Transform a Vector
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'flex-end' }}>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>ECEF input</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[['X', vx, setVx], ['Y', vy, setVy], ['Z', vz, setVz]].map(([label, val, setter]) => (
+                  <div key={label} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>{label}</div>
+                    <input type="number" value={val} onChange={e => setter(e.target.value)}
+                      style={{ ...inp, width: 62 }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <span style={{ fontFamily: 'monospace', fontSize: 18, color: '#334155', paddingBottom: 4 }}>→</span>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>NED result</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[['N', vNED[0], '#22c55e'], ['E', vNED[1], '#f59e0b'], ['D', vNED[2], '#ef4444']].map(([label, val, col]) => (
+                  <div key={label} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>{label}</div>
+                    <div style={resultBox(col)}>{isNaN(val) ? '—' : val.toFixed(4)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
 // ── Axis cards ─────────────────────────────────────────────────────────────────
 
 const ECEF_AXES = [
@@ -474,6 +725,9 @@ export default function ReferenceFramesPage() {
           { label: 'Common use',   val: 'Aviation, INS, sensor fusion, autopilots' },
         ]} />
       </div>
+
+      {/* ── ECEF → NED Transform section ── */}
+      <EcefToNedSection />
 
     </div>
   )
