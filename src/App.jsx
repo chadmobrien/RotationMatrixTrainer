@@ -431,7 +431,7 @@ function TrainerPage() {
 
 const TABS = [
   { id: 'home',      label: 'Home' },
-  { id: 'decompose', label: '2D Frame Decomposition' },
+  { id: 'decompose', label: 'Rotation Matrices' },
   { id: 'trainer',   label: '3D Matrix Trainer' },
   { id: 'refframes', label: 'Reference Frames' },
 ]

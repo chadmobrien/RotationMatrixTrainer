@@ -13,7 +13,7 @@ const fmtVal = (n) => {
   return n.toFixed(4).replace(/\.?0+$/, '')
 }
 
-const ANGLES = [30, 45, 60, 90, 120, 135, 150]
+const ANGLES = [-60, -45, -30, 30, 45, 60, 90, 120, 135, 150]
 const randAngle = () => ANGLES[Math.floor(Math.random() * ANGLES.length)]
 
 // ── SVG Frame Diagram ──────────────────────────────────────────────────────────
@@ -46,10 +46,11 @@ function ArcAngle({ cx, cy, r, startDeg, endDeg, color }) {
   const y1 = cy - r * Math.sin(startDeg * RAD)   // SVG y is flipped
   const x2 = cx + r * Math.cos(endDeg * RAD)
   const y2 = cy - r * Math.sin(endDeg * RAD)
-  const large = (endDeg - startDeg) > 180 ? 1 : 0
+  const large = Math.abs(endDeg - startDeg) > 180 ? 1 : 0
+  const sweep = endDeg >= startDeg ? 0 : 1
   return (
     <path
-      d={`M ${x1} ${y1} A ${r} ${r} 0 ${large} 0 ${x2} ${y2}`}
+      d={`M ${x1} ${y1} A ${r} ${r} 0 ${large} ${sweep} ${x2} ${y2}`}
       fill="none" stroke={color} strokeWidth={1.5} strokeDasharray="4 3"
     />
   )
@@ -288,7 +289,7 @@ function Feedback({ status, msg }) {
 // ── Main DecompositionPage ─────────────────────────────────────────────────────
 
 export default function DecompositionPage() {
-  const [theta, setTheta] = useState(randAngle)
+  const [theta, setTheta] = useState(-60)
   const [step, setStep] = useState(1)            // 1 = find x̂₂, 2 = find ŷ₂, 3 = done
   const [input1, setInput1] = useState(['', '']) // x̂₂ in F1
   const [input2, setInput2] = useState(['', '']) // ŷ₂ in F1
@@ -342,13 +343,118 @@ export default function DecompositionPage() {
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: '#f1f5f9', marginBottom: 4 }}>
-          Frame Decomposition — 2D
+          Rotation Matrices
         </h2>
         <p style={{ color: '#64748b', fontSize: 14 }}>
           Build R(θ) by expressing Frame 2's axes in Frame 1 coordinates.
           Each column of R(θ) is one of those axis vectors.
         </p>
       </div>
+
+      {/* ── Worked Example ──────────────────────────────────────────────────── */}
+      <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, padding: 24, marginBottom: 32 }}>
+        <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#475569', marginBottom: 16 }}>
+          Worked Example — θ = 30°
+        </p>
+        <p style={{ fontSize: 14, color: '#94a3b8', lineHeight: 1.7, marginBottom: 20 }}>
+          Frame 2 is rotated 30° counter-clockwise from Frame 1. To build the rotation matrix, we need
+          to express each of Frame 2's axes as a vector in Frame 1's coordinates — these become the
+          columns of R(30°).
+        </p>
+
+        {/* Diagram with projections always on */}
+        <div style={{ marginBottom: 24, background: '#0a1120', borderRadius: 10, padding: '12px 0 8px', border: '1px solid #1e293b' }}>
+          <div style={{ textAlign: 'center', marginBottom: 6 }}>
+            <span style={{ fontFamily: 'monospace', fontSize: 14, color: '#fbbf24' }}>θ = 30°</span>
+            <span style={{ marginLeft: 14, fontSize: 12, color: '#475569' }}>projection lines shown</span>
+          </div>
+          <FrameDiagram theta={30} showProjections={true} step={2} />
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 24, padding: '6px 0', fontSize: 12 }}>
+            <span style={{ color: '#64748b' }}>■ Frame 1 (gray)</span>
+            <span style={{ color: '#3b82f6' }}>■ x̂₂ (blue)</span>
+            <span style={{ color: '#a78bfa' }}>■ ŷ₂ (purple)</span>
+          </div>
+        </div>
+
+        {/* Step-by-step walkthrough */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* Step 1 */}
+          <div style={{ display: 'flex', gap: 14 }}>
+            <div style={{
+              width: 26, height: 26, borderRadius: '50%', background: '#1d4ed8', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 13, fontWeight: 700, color: '#fff', marginTop: 1
+            }}>1</div>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#3b82f6', marginBottom: 4 }}>
+                Find x̂₂ — the blue axis — in Frame 1 coordinates
+              </p>
+              <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7, marginBottom: 6 }}>
+                Project x̂₂ onto each Frame 1 axis using the dot product. The dashed blue lines show these
+                projections dropping perpendicularly onto x̂₁ and ŷ₁.
+              </p>
+              <div style={{ fontFamily: 'monospace', fontSize: 13, color: '#94a3b8', lineHeight: 2, paddingLeft: 4 }}>
+                <div>x̂₂ · x̂₁ = cos 30° = √3/2 ≈ 0.866 &nbsp;<span style={{ color: '#64748b' }}>(how far x̂₂ reaches along x̂₁)</span></div>
+                <div>x̂₂ · ŷ₁ = sin 30° = 1/2 = 0.5 &nbsp;<span style={{ color: '#64748b' }}>(how far x̂₂ reaches along ŷ₁)</span></div>
+                <div style={{ color: '#3b82f6', marginTop: 4 }}>x̂₂ in F1 = [cos 30°, sin 30°] = [√3/2, 1/2]</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div style={{ display: 'flex', gap: 14 }}>
+            <div style={{
+              width: 26, height: 26, borderRadius: '50%', background: '#7c3aed', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 13, fontWeight: 700, color: '#fff', marginTop: 1
+            }}>2</div>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#a78bfa', marginBottom: 4 }}>
+                Find ŷ₂ — the purple axis — in Frame 1 coordinates
+              </p>
+              <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7, marginBottom: 6 }}>
+                ŷ₂ is always 90° CCW from x̂₂. Project it the same way. Notice the sin term is now
+                negative along x̂₁ — ŷ₂ has swung past vertical into the second quadrant.
+              </p>
+              <div style={{ fontFamily: 'monospace', fontSize: 13, color: '#94a3b8', lineHeight: 2, paddingLeft: 4 }}>
+                <div>ŷ₂ · x̂₁ = −sin 30° = −1/2 = −0.5</div>
+                <div>ŷ₂ · ŷ₁ = &nbsp;cos 30° = √3/2 ≈ &nbsp;0.866</div>
+                <div style={{ color: '#a78bfa', marginTop: 4 }}>ŷ₂ in F1 = [−sin 30°, cos 30°] = [−1/2, √3/2]</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 3 — assemble */}
+          <div style={{ display: 'flex', gap: 14 }}>
+            <div style={{
+              width: 26, height: 26, borderRadius: '50%', background: '#0369a1', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 13, fontWeight: 700, color: '#fff', marginTop: 1
+            }}>3</div>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#22d3ee', marginBottom: 4 }}>
+                Assemble the matrix — each axis vector becomes a column
+              </p>
+              <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7, marginBottom: 8 }}>
+                Place x̂₂ as column 1 and ŷ₂ as column 2. The result is R(30°):
+              </p>
+              <div style={{ fontFamily: 'monospace', fontSize: 13, color: '#e2e8f0', lineHeight: 2.2, paddingLeft: 4 }}>
+                <div>R(30°) = [ x̂₂ | ŷ₂ ]</div>
+                <div style={{ color: '#94a3b8' }}>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = [[ cos30°, −sin30° ],</div>
+                <div style={{ color: '#94a3b8' }}>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ sin30°,  cos30° ]]</div>
+                <div style={{ marginTop: 4 }}>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = [[ √3/2, −1/2 ],</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ 1/2,  √3/2 ]]</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <p style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginBottom: 16 }}>
+        Now try it yourself — a new angle will be shown below.
+      </p>
 
       {/* Score */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -517,6 +623,196 @@ export default function DecompositionPage() {
           </p>
         </div>
       </details>
+
+      {/* ── Matrix Operations & Order ─────────────────────────────────────── */}
+      <div style={{ marginTop: 40, borderTop: '1px solid #1e293b', paddingTop: 32 }}>
+        <h3 style={{ fontSize: 17, fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
+          Matrix Operations &amp; Order
+        </h3>
+        <p style={{ fontSize: 14, color: '#94a3b8', lineHeight: 1.7, marginBottom: 20 }}>
+          Rotation matrices are multiplied together to chain rotations, but the order you multiply
+          them in matters — matrix multiplication is not commutative.
+        </p>
+
+        {/* Non-commutativity callout */}
+        <div style={{ background: '#1e293b', borderRadius: 10, padding: 20, marginBottom: 20, border: '1px solid #334155' }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#fbbf24', marginBottom: 10, letterSpacing: 0.3 }}>
+            ORDER MATTERS — R<sub>A</sub> · R<sub>B</sub> ≠ R<sub>B</sub> · R<sub>A</sub> in general
+          </p>
+          <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7, marginBottom: 16 }}>
+            Consider rotating the vector <span style={{ fontFamily: 'monospace', color: '#e2e8f0' }}>v = [1, 0, 0]</span> by
+            two 90° rotations in different orders:
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+            <div style={{ flex: '1 1 200px' }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#3b82f6', marginBottom: 6 }}>
+                R<sub>z</sub>(90°) first, then R<sub>x</sub>(90°):
+              </p>
+              <div style={{ fontFamily: 'monospace', fontSize: 12, color: '#94a3b8', lineHeight: 2 }}>
+                <div>v → R<sub>z</sub>(90°)·v = [0, 1, 0]</div>
+                <div>  → R<sub>x</sub>(90°)·[0,1,0] = [0, 0, 1]</div>
+                <div style={{ color: '#3b82f6', fontWeight: 600 }}>Result: [0, 0, 1]</div>
+              </div>
+            </div>
+            <div style={{ flex: '1 1 200px' }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#a78bfa', marginBottom: 6 }}>
+                R<sub>x</sub>(90°) first, then R<sub>z</sub>(90°):
+              </p>
+              <div style={{ fontFamily: 'monospace', fontSize: 12, color: '#94a3b8', lineHeight: 2 }}>
+                <div>v → R<sub>x</sub>(90°)·v = [1, 0, 0]</div>
+                <div>  → R<sub>z</sub>(90°)·[1,0,0] = [0, 1, 0]</div>
+                <div style={{ color: '#a78bfa', fontWeight: 600 }}>Result: [0, 1, 0]</div>
+              </div>
+            </div>
+          </div>
+          <p style={{ fontSize: 12, color: '#475569', marginTop: 14, lineHeight: 1.6 }}>
+            Same two rotations, different order — completely different final orientation. This is why
+            the sequence of rotations is always explicitly specified in aerospace and robotics.
+          </p>
+        </div>
+
+        <div style={{ background: '#0f172a', borderRadius: 8, padding: 16, border: '1px solid #1e293b', fontSize: 13, color: '#64748b', lineHeight: 1.9 }}>
+          <p style={{ color: '#e2e8f0', fontWeight: 600, marginBottom: 8 }}>Reading a chain of rotations</p>
+          <p>
+            When you write <span style={{ fontFamily: 'monospace', color: '#e2e8f0' }}>R<sub>C</sub> · R<sub>B</sub> · R<sub>A</sub></span>,
+            the rotation <em>applied first</em> is the rightmost one (R<sub>A</sub>), working left toward R<sub>C</sub>.
+            A vector <span style={{ fontFamily: 'monospace', color: '#e2e8f0' }}>v</span> is transformed as:
+          </p>
+          <p style={{ fontFamily: 'monospace', color: '#e2e8f0', marginTop: 6, marginBottom: 6 }}>
+            v′ = R<sub>C</sub> · (R<sub>B</sub> · (R<sub>A</sub> · v))
+          </p>
+          <p>
+            <span style={{ color: '#fbbf24' }}>Exception:</span> rotations about the <em>same axis</em> commute —
+            R<sub>z</sub>(α) · R<sub>z</sub>(β) = R<sub>z</sub>(β) · R<sub>z</sub>(α) = R<sub>z</sub>(α+β).
+          </p>
+        </div>
+      </div>
+
+      {/* ── Properties of Rotation Matrices ──────────────────────────────── */}
+      <div style={{ marginTop: 40, borderTop: '1px solid #1e293b', paddingTop: 32 }}>
+        <h3 style={{ fontSize: 17, fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
+          Properties of Rotation Matrices
+        </h3>
+        <p style={{ fontSize: 14, color: '#94a3b8', lineHeight: 1.7, marginBottom: 20 }}>
+          Every proper rotation matrix satisfies the following properties — these are not just
+          coincidences, they follow directly from what a rotation does geometrically.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+          {[
+            {
+              title: 'Determinant = +1',
+              color: '#3b82f6',
+              body: <>
+                det(R) = +1 always. The determinant measures how a matrix scales volume — a rotation
+                preserves shape and handedness, so the volume scale is exactly 1. A det of −1
+                would indicate a <em>reflection</em>, not a pure rotation.
+              </>
+            },
+            {
+              title: 'Columns (and rows) are orthonormal',
+              color: '#a78bfa',
+              body: <>
+                Each column of R is a unit vector, and any two columns are perpendicular.
+                The same holds for rows. This makes sense because the columns are the rotated
+                coordinate axes — unit vectors that remain mutually perpendicular after rotation.
+              </>
+            },
+            {
+              title: <>R<sup>T</sup> = R<sup>−1</sup></>,
+              color: '#22d3ee',
+              body: <>
+                Transposing a rotation matrix gives its inverse. This means undoing a rotation
+                costs no extra computation — just transpose. It also means
+                R · R<sup>T</sup> = R<sup>T</sup> · R = I.
+              </>
+            },
+            {
+              title: 'Preserves lengths and angles',
+              color: '#22c55e',
+              body: <>
+                For any vectors <strong>u</strong> and <strong>v</strong>:
+                &nbsp;|Ru| = |u| and (Ru)·(Rv) = u·v. Rotations are isometries — they move
+                vectors without stretching or shearing them, keeping dot products and therefore
+                angles intact.
+              </>
+            },
+          ].map(({ title, color, body }) => (
+            <div key={color} style={{
+              background: '#1e293b', borderRadius: 10, padding: 18,
+              border: '1px solid #334155', borderLeft: `3px solid ${color}`
+            }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color, marginBottom: 6 }}>{title}</p>
+              <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7, margin: 0 }}>{body}</p>
+            </div>
+          ))}
+
+        </div>
+      </div>
+
+      {/* ── Orthogonal Matrices ───────────────────────────────────────────── */}
+      <div style={{ marginTop: 40, borderTop: '1px solid #1e293b', paddingTop: 32, marginBottom: 16 }}>
+        <h3 style={{ fontSize: 17, fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
+          Orthogonal Matrices
+        </h3>
+        <p style={{ fontSize: 14, color: '#94a3b8', lineHeight: 1.7, marginBottom: 20 }}>
+          Rotation matrices belong to a broader family called <em>orthogonal matrices</em>.
+          Understanding this family clarifies why rotation matrices have the properties they do.
+        </p>
+
+        <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 10, padding: 20, marginBottom: 16 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f0', marginBottom: 10 }}>Definition</p>
+          <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7, marginBottom: 10 }}>
+            A square matrix Q is <strong style={{ color: '#e2e8f0' }}>orthogonal</strong> if:
+          </p>
+          <p style={{ fontFamily: 'monospace', fontSize: 14, color: '#fbbf24', marginBottom: 10, paddingLeft: 16 }}>
+            Q<sup>T</sup> · Q = Q · Q<sup>T</sup> = I
+          </p>
+          <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7 }}>
+            This is equivalent to saying Q<sup>−1</sup> = Q<sup>T</sup>, or that the columns of Q
+            form an orthonormal basis.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 16 }}>
+          <div style={{ flex: '1 1 220px', background: '#14532d22', border: '1px solid #22c55e44', borderRadius: 10, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: '#22c55e', marginBottom: 6 }}>Rotation — det = +1</p>
+            <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.7 }}>
+              Orthogonal matrix with det(Q) = +1. Preserves handedness (right-hand stays right-hand).
+              These form the group <strong style={{ color: '#e2e8f0' }}>SO(n)</strong> — Special Orthogonal group.
+              In 3D: SO(3).
+            </p>
+          </div>
+          <div style={{ flex: '1 1 220px', background: '#7f1d1d22', border: '1px solid #ef444444', borderRadius: 10, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: '#ef4444', marginBottom: 6 }}>Reflection — det = −1</p>
+            <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.7 }}>
+              Orthogonal matrix with det(Q) = −1. Flips handedness (a mirror image).
+              These are also isometries but cannot be achieved by physical rotation alone.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ background: '#1e293b', borderRadius: 10, padding: 18, border: '1px solid #334155', fontSize: 13, color: '#64748b', lineHeight: 1.9 }}>
+          <p style={{ color: '#e2e8f0', fontWeight: 600, marginBottom: 8 }}>The practical payoff</p>
+          <ul style={{ marginLeft: 16, marginBottom: 0 }}>
+            <li>
+              <strong style={{ color: '#94a3b8' }}>Cheap inverse:</strong> R<sup>−1</sup> = R<sup>T</sup>.
+              Transposing is trivial; inverting a general matrix requires Gaussian elimination.
+            </li>
+            <li>
+              <strong style={{ color: '#94a3b8' }}>Numerical stability check:</strong> if you compose many
+              rotation matrices and the result drifts from orthogonality (det ≠ 1, columns not unit),
+              floating-point error has accumulated — the matrix should be re-orthogonalized.
+            </li>
+            <li>
+              <strong style={{ color: '#94a3b8' }}>Group closure:</strong> the product of two rotation matrices
+              is always another rotation matrix. You can chain any number of rotations and the result
+              remains a valid rotation.
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   )
 }
