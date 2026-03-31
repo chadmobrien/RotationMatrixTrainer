@@ -149,8 +149,8 @@ function FrameDiagram({ theta, showProjections, step }) {
             <DashedProjection cx={x2tip.x} cy={x2tip.y} ax={projOnF1y.x} ay={projOnF1y.y} color="#3b82f6" />
             <circle cx={projOnF1x.x} cy={projOnF1x.y} r={4} fill="#3b82f6" opacity={0.8} />
             <circle cx={projOnF1y.x} cy={projOnF1y.y} r={4} fill="#3b82f6" opacity={0.8} />
-            {vLineLen > 18 && <ProjLabel x={vMidX + vDx} y={vMidY} text="cos θ" color="#3b82f6" anchor={vAnchor} />}
-            {hLineLen > 18 && <ProjLabel x={hMidX} y={hMidY + hDy} text="sin θ" color="#3b82f6" anchor="middle" />}
+            {vLineLen > 18 && <ProjLabel x={vMidX + vDx} y={vMidY} text="sin θ" color="#3b82f6" anchor={vAnchor} />}
+            {hLineLen > 18 && <ProjLabel x={hMidX} y={hMidY + hDy} text="cos θ" color="#3b82f6" anchor="middle" />}
           </g>
         )
       })()}
@@ -176,8 +176,8 @@ function FrameDiagram({ theta, showProjections, step }) {
             <DashedProjection cx={y2tip.x} cy={y2tip.y} ax={projY2OnF1y.x} ay={projY2OnF1y.y} color="#a78bfa" />
             <circle cx={projY2OnF1x.x} cy={projY2OnF1x.y} r={4} fill="#a78bfa" opacity={0.8} />
             <circle cx={projY2OnF1y.x} cy={projY2OnF1y.y} r={4} fill="#a78bfa" opacity={0.8} />
-            {vLineLen > 18 && <ProjLabel x={vMidX + vDx} y={vMidY} text="-sin θ" color="#a78bfa" anchor={vAnchor} />}
-            {hLineLen > 18 && <ProjLabel x={hMidX} y={hMidY + hDy} text="cos θ" color="#a78bfa" anchor="middle" />}
+            {vLineLen > 18 && <ProjLabel x={vMidX + vDx} y={vMidY} text="cos θ" color="#a78bfa" anchor={vAnchor} />}
+            {hLineLen > 18 && <ProjLabel x={hMidX} y={hMidY + hDy} text="-sin θ" color="#a78bfa" anchor="middle" />}
           </g>
         )
       })()}
