@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import DecompositionPage from './DecompositionPage.jsx'
 import LandingPage from './LandingPage.jsx'
 import ReferenceFramesPage from './ReferenceFramesPage.jsx'
+import CalculatorsPage from './CalculatorsPage.jsx'
 import { evalExpr, nearlyEqual } from './mathEval.js'
 
 // ── helpers ────────────────────────────────────────────────────────────────────
@@ -430,10 +431,11 @@ function TrainerPage() {
 // ── Tab shell ──────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'home',      label: 'Home' },
-  { id: 'decompose', label: 'Rotation Matrices' },
-  { id: 'trainer',   label: '3D Matrix Trainer' },
-  { id: 'refframes', label: 'Reference Frames' },
+  { id: 'home',        label: 'Home' },
+  { id: 'decompose',   label: 'Rotation Matrices' },
+  { id: 'trainer',     label: '3D Matrix Trainer' },
+  { id: 'refframes',   label: 'Reference Frames' },
+  { id: 'calculators', label: 'Calculators' },
 ]
 
 export default function App() {
@@ -466,7 +468,8 @@ export default function App() {
       {tab === 'home'      && <LandingPage onNavigate={setTab} />}
       {tab === 'decompose' && <DecompositionPage />}
       {tab === 'trainer'   && <TrainerPage />}
-      {tab === 'refframes' && <ReferenceFramesPage />}
+      {tab === 'refframes'   && <ReferenceFramesPage />}
+      {tab === 'calculators' && <CalculatorsPage />}
     </div>
   )
 }

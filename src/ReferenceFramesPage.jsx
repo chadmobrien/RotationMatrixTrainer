@@ -729,6 +729,73 @@ export default function ReferenceFramesPage() {
       {/* ── ECEF → NED Transform section ── */}
       <EcefToNedSection />
 
+      {/* ── Euler Angles section ── */}
+      <div style={{ marginTop: 56, borderTop: '1px solid #1e293b', paddingTop: 40 }}>
+
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap', marginBottom: 10 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#f1f5f9', margin: 0 }}>Body Frame</h2>
+          <span style={{ fontSize: 15, color: '#64748b' }}>Euler Angles — Yaw, Pitch, and Roll</span>
+        </div>
+
+        <p style={{ fontSize: 14, color: '#94a3b8', lineHeight: 1.75, marginBottom: 16 }}>
+          Euler angles are a set of three angles — <strong style={{ color: '#e2e8f0' }}>ψ (psi)</strong>,{' '}
+          <strong style={{ color: '#e2e8f0' }}>θ (theta)</strong>, and{' '}
+          <strong style={{ color: '#e2e8f0' }}>φ (phi)</strong> — that describe the orientation of a rigid
+          body relative to a reference frame. In aerospace engineering these map directly to the
+          intuitive motions of an aircraft: heading, nose angle, and wing tilt.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+          {[
+            {
+              symbol: 'ψ', name: 'Yaw', color: '#3b82f6',
+              axis: 'R_z — rotation about the Down (Z) axis',
+              range: '0° to 360° (or ±180°)',
+              body: 'Yaw is a rotation about the body Z axis (Down). It describes the heading of the aircraft — which compass direction the nose is pointing. Zero heading points North; ψ increases clockwise when viewed from above (North → East → South → West). Applied first in the 3-2-1 sequence.',
+            },
+            {
+              symbol: 'θ', name: 'Pitch', color: '#a78bfa',
+              axis: 'R_y — rotation about the lateral (Y) axis',
+              range: '±90°',
+              body: 'Pitch is a rotation about the body Y axis (out the right wing). It describes how far the nose is above or below the horizon. Positive pitch raises the nose above the horizon; negative pitch pushes it below. At θ = +90° the aircraft points straight up — a gimbal singularity where yaw and roll become indistinguishable.',
+            },
+            {
+              symbol: 'φ', name: 'Roll', color: '#22d3ee',
+              axis: 'R_x — rotation about the longitudinal (X) axis',
+              range: '±180°',
+              body: 'Roll is a rotation about the body X axis (nose-to-tail). It describes how level the wings are relative to the horizon. Positive roll tilts the right wing down and the left wing up. When φ ≠ 0 the wings are no longer parallel to the local horizontal plane. Applied last, after yaw and pitch have fixed the nose direction.',
+            },
+          ].map(({ symbol, name, color, axis, range, body }) => (
+            <div key={symbol} style={{
+              background: '#1e293b', borderRadius: 10, padding: '16px 20px',
+              border: '1px solid #334155', borderLeft: `3px solid ${color}`,
+              display: 'flex', gap: 16, alignItems: 'flex-start',
+            }}>
+              <div style={{ textAlign: 'center', minWidth: 48, paddingTop: 2 }}>
+                <div style={{ fontFamily: 'monospace', fontSize: 24, fontWeight: 800, color, lineHeight: 1 }}>{symbol}</div>
+                <div style={{ fontSize: 11, color: '#475569', marginTop: 4, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8 }}>{name}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color, fontFamily: 'monospace', fontWeight: 700, marginBottom: 4 }}>{axis}</div>
+                <div style={{ fontSize: 11, color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 5 }}>
+                  Range: {range}
+                </div>
+                <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.7, margin: 0 }}>{body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 10, padding: '18px 22px', fontSize: 13, color: '#64748b', lineHeight: 1.8 }}>
+          <span style={{ color: '#fbbf24', fontWeight: 700 }}>Application order matters: </span>
+          The aerospace convention applies yaw first, pitch second, roll third — each rotation about
+          a <em>moving</em> (body-fixed) axis. This sequence is sometimes called the 3-2-1 Euler angle
+          sequence, referring to the axes Z→Y→X. The resulting body orientation depends entirely on
+          the order: applying the same three angles in a different sequence produces a different attitude.
+        </div>
+
+      </div>
+
     </div>
   )
 }
